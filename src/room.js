@@ -2,7 +2,8 @@ import * as THREE from 'three';
 
 // Scale: 1 unit = 1cm
 const WALL_THICKNESS = 10;
-const WALL_HEIGHT = 250;
+const WALL_HEIGHT_1F = 220;
+const WALL_HEIGHT_2F = 150;
 
 // Side-by-side layout
 export const FLOOR2_X_OFFSET = 380 + 100; // 1F width + gap
@@ -108,7 +109,7 @@ function createGridHelper(w, d, y) {
  */
 function createStorageStairs(x, z, w, d, yBottom, yTop, descending = false) {
   const group = new THREE.Group();
-  const stepCount = 8; // ~8 steps visible in photos
+  const stepCount = 10;
   const totalHeight = yTop - yBottom;
   const stepHeight = totalHeight / stepCount;
   const stepDepth = d / stepCount;
@@ -681,29 +682,29 @@ export function buildFloor1(scene) {
   group.add(grid);
 
   // Ceiling
-  const ceiling = createCeiling(W, D, WALL_HEIGHT);
+  const ceiling = createCeiling(W, D, WALL_HEIGHT_1F);
   ceiling.name = 'floor1-ceiling';
   group.add(ceiling);
 
   // Outer walls (white)
-  group.add(createWall(0, 0, W, 0, WALL_HEIGHT, 0));
-  group.add(createWall(W, 0, W, D, WALL_HEIGHT, 0));
-  group.add(createWall(W, D, 0, D, WALL_HEIGHT, 0));
-  group.add(createWall(0, D, 0, 0, WALL_HEIGHT, 0));
+  group.add(createWall(0, 0, W, 0, WALL_HEIGHT_1F, 0));
+  group.add(createWall(W, 0, W, D, WALL_HEIGHT_1F, 0));
+  group.add(createWall(W, D, 0, D, WALL_HEIGHT_1F, 0));
+  group.add(createWall(0, D, 0, 0, WALL_HEIGHT_1F, 0));
 
   // Wall edge molding (beige trim at top of walls)
   const moldingH = 3;
   const molding1 = createBox(W, moldingH, 1, COLORS.wallEdge);
-  molding1.position.set(W / 2, WALL_HEIGHT - moldingH / 2, WALL_THICKNESS / 2);
+  molding1.position.set(W / 2, WALL_HEIGHT_1F - moldingH / 2, WALL_THICKNESS / 2);
   group.add(molding1);
   const molding2 = createBox(1, moldingH, D, COLORS.wallEdge);
-  molding2.position.set(WALL_THICKNESS / 2, WALL_HEIGHT - moldingH / 2, D / 2);
+  molding2.position.set(WALL_THICKNESS / 2, WALL_HEIGHT_1F - moldingH / 2, D / 2);
   group.add(molding2);
 
   // === Fixed Structures ===
 
   // 1. Bathroom (화장실) - 200x170 at (0,0)
-  const bathroom = createBathroomRoom(0, 0, 200, 170, WALL_HEIGHT, 0);
+  const bathroom = createBathroomRoom(0, 0, 200, 170, WALL_HEIGHT_1F, 0);
   group.add(bathroom);
   group.add(createFixtureLabel('화장실', 100, 140, 85));
 
@@ -720,14 +721,14 @@ export function buildFloor1(scene) {
   group.add(createFixtureLabel('현관', 320, 100, 35));
 
   // 4. Storage Stairs (수납 계단) - 70x210 at (310,225)
-  const stairs = createStorageStairs(310, 225, 70, 210, 0, WALL_HEIGHT);
+  const stairs = createStorageStairs(310, 225, 70, 210, 0, WALL_HEIGHT_1F);
   stairs.userData.name = '계단';
   group.add(stairs);
-  group.add(createFixtureLabel('계단', 345, WALL_HEIGHT / 2 + 30, 330));
+  group.add(createFixtureLabel('계단', 345, WALL_HEIGHT_1F / 2 + 30, 330));
 
   // Ceiling opening above stairs (darker area showing 2F access)
   const stairOpening = createBox(72, 2, 75, 0x333344, 0.7);
-  stairOpening.position.set(345, WALL_HEIGHT - 1, 230);
+  stairOpening.position.set(345, WALL_HEIGHT_1F - 1, 230);
   group.add(stairOpening);
 
   // 5. Back door (뒷문) - 100x6 at (280,504)
@@ -764,44 +765,38 @@ export function buildFloor2(scene) {
   group.add(grid);
 
   // Ceiling
-  const ceiling = createCeiling(W, D, Y_BASE + WALL_HEIGHT);
+  const ceiling = createCeiling(W, D, Y_BASE + WALL_HEIGHT_2F);
   ceiling.name = 'floor2-ceiling';
   group.add(ceiling);
 
   // Outer walls (white)
-  group.add(createWall(0, 0, W, 0, WALL_HEIGHT, Y_BASE));
-  group.add(createWall(W, 0, W, D, WALL_HEIGHT, Y_BASE));
-  group.add(createWall(W, D, 0, D, WALL_HEIGHT, Y_BASE));
-  group.add(createWall(0, D, 0, 0, WALL_HEIGHT, Y_BASE));
+  group.add(createWall(0, 0, W, 0, WALL_HEIGHT_2F, Y_BASE));
+  group.add(createWall(W, 0, W, D, WALL_HEIGHT_2F, Y_BASE));
+  group.add(createWall(W, D, 0, D, WALL_HEIGHT_2F, Y_BASE));
+  group.add(createWall(0, D, 0, 0, WALL_HEIGHT_2F, Y_BASE));
 
   // Wall edge molding (beige trim)
   const moldingH = 3;
   const molding1 = createBox(W, moldingH, 1, COLORS.wallEdge);
-  molding1.position.set(W / 2, Y_BASE + WALL_HEIGHT - moldingH / 2, WALL_THICKNESS / 2);
+  molding1.position.set(W / 2, Y_BASE + WALL_HEIGHT_2F - moldingH / 2, WALL_THICKNESS / 2);
   group.add(molding1);
   const molding2 = createBox(1, moldingH, D, COLORS.wallEdge);
-  molding2.position.set(WALL_THICKNESS / 2, Y_BASE + WALL_HEIGHT - moldingH / 2, D / 2);
+  molding2.position.set(WALL_THICKNESS / 2, Y_BASE + WALL_HEIGHT_2F - moldingH / 2, D / 2);
   group.add(molding2);
 
   // === Fixed Structures ===
 
   // 1. Attic storage (다락방 수납) - low ceiling room with accordion curtain
-  // Replaces the old "blocked space" - 215x170 at (0,0), but with ~150cm ceiling
-  const atticHeight = 150; // low ceiling
+  // 215x170 at (0,0), ceiling same as room height
+  const atticHeight = WALL_HEIGHT_2F;
   const attic = createAtticStorage(0, 0, 215, 170, atticHeight, Y_BASE);
   group.add(attic);
   group.add(createFixtureLabel('다락방 수납', 107, Y_BASE + 80, 85));
 
-  // Upper wall above attic (from attic ceiling to room ceiling)
-  const upperWallH = WALL_HEIGHT - atticHeight;
-  const upperWall = createBox(215, upperWallH, 2, COLORS.wall);
-  upperWall.position.set(107.5, Y_BASE + atticHeight + upperWallH / 2, 170);
-  group.add(upperWall);
-
   // Dividing wall (east side of attic area)
-  group.add(createWall(215, 0, 215, 170, WALL_HEIGHT, Y_BASE, COLORS.wall));
-  // South wall of attic area (partial - below attic ceiling)
-  group.add(createWall(0, 170, 215, 170, atticHeight, Y_BASE, COLORS.wall));
+  group.add(createWall(215, 0, 215, 170, WALL_HEIGHT_2F, Y_BASE, COLORS.wall));
+  // South wall of attic area
+  group.add(createWall(0, 170, 215, 170, WALL_HEIGHT_2F, Y_BASE, COLORS.wall));
 
   // 2. Partition area (칸막이) - right side of attic
   const partitionGeo = new THREE.BufferGeometry().setFromPoints([
