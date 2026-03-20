@@ -259,9 +259,9 @@ export function createFurniture(type, floor = 1) {
   group.userData.height = def.height;
   group.userData.depth = def.depth;
 
-  // Position at floor level
-  const yBase = floor === 1 ? def.height / 2 : 250 + def.height / 2;
-  group.position.set(190, yBase, floor === 1 ? 350 : 350);
+  // Position at floor level (both floors at y=0 in side-by-side layout)
+  const yBase = def.height / 2;
+  group.position.set(190, yBase, 350);
 
   group.castShadow = true;
 

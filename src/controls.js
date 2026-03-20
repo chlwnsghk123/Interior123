@@ -85,15 +85,17 @@ export class FurnitureControls {
         this.dragging = true;
         this.orbitControls.enabled = false;
 
-        // Create drag plane at furniture's Y position
+        // Create drag plane at furniture's world Y position
+        const worldPos = new THREE.Vector3();
+        furniture.getWorldPosition(worldPos);
         this.dragPlane.setFromNormalAndCoplanarPoint(
           new THREE.Vector3(0, 1, 0),
-          furniture.position
+          worldPos
         );
 
-        // Calculate offset
+        // Calculate offset in world space
         this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection);
-        this.dragOffset.copy(furniture.position).sub(this.intersection);
+        this.dragOffset.copy(worldPos).sub(this.intersection);
 
         return;
       }
@@ -112,9 +114,12 @@ export class FurnitureControls {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
-      const newPos = this.intersection.add(this.dragOffset);
-      this.selected.position.x = newPos.x;
-      this.selected.position.z = newPos.z;
+      const newWorldPos = this.intersection.add(this.dragOffset);
+      // Convert world position to parent's local space (handles floor2Group offset)
+      const parent = this.selected.parent;
+      const localPos = parent.worldToLocal(newWorldPos.clone());
+      this.selected.position.x = localPos.x;
+      this.selected.position.z = localPos.z;
       // Keep Y fixed (on floor)
     }
   }
