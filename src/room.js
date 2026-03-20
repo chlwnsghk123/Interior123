@@ -114,88 +114,78 @@ function createStorageStairs(x, z, w, d, yBottom, yTop, descending = false) {
   const stepHeight = totalHeight / stepCount;
   const stepDepth = d / stepCount;
 
+  // Step treads and body for each step
   for (let i = 0; i < stepCount; i++) {
-    // Step tread (the flat part you walk on)
-    const stepY = descending
-      ? yTop - stepHeight * (i + 1)
-      : yBottom + stepHeight * i;
     const stepZ = z + stepDepth * i;
+    const columnH = stepHeight * (i + 1);
+    const columnY = yBottom + columnH / 2;
 
-    // Full height column for this step (the storage part below)
-    const columnH = descending
-      ? totalHeight - stepHeight * i
-      : stepHeight * (i + 1);
-    const columnY = descending
-      ? yTop - columnH / 2
-      : yBottom + columnH / 2;
+    // Step body (solid fill below each step)
+    const body = createBox(w, columnH, stepDepth - 1, COLORS.stairCabinet);
+    body.position.set(x + w / 2, columnY, stepZ + stepDepth / 2);
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
 
-    // Storage body (cabinet behind steps)
-    const cabinet = createBox(w, columnH, stepDepth - 1, COLORS.stairCabinet);
-    cabinet.position.set(x + w / 2, columnY, stepZ + stepDepth / 2);
-    cabinet.castShadow = true;
-    cabinet.receiveShadow = true;
-    group.add(cabinet);
-
-    // Step tread (top surface - slightly wider)
+    // Step tread (top surface)
     const tread = createBox(w + 2, 3, stepDepth, COLORS.stairWood);
-    tread.position.set(
-      x + w / 2,
-      stepY + columnH + 1.5,
-      stepZ + stepDepth / 2
-    );
-    if (descending) {
-      tread.position.y = yTop - stepHeight * i - 1.5;
-    }
+    tread.position.set(x + w / 2, yBottom + columnH + 1.5, stepZ + stepDepth / 2);
     tread.castShadow = true;
     group.add(tread);
 
-    // Step edge (darker line on front of each step)
+    // Step edge (darker line)
     const edge = createBox(w, 2, 1, COLORS.stairEdge);
-    edge.position.set(
-      x + w / 2,
-      stepY + columnH,
-      stepZ + 0.5
-    );
-    if (descending) {
-      edge.position.y = yTop - stepHeight * i;
-      edge.position.z = stepZ + stepDepth - 0.5;
-    }
+    edge.position.set(x + w / 2, yBottom + columnH, stepZ + 0.5);
     group.add(edge);
-
-    // Cabinet door lines (decorative) - only on the front face for taller sections
-    if (columnH > 40) {
-      // Door outline
-      const doorH = Math.min(columnH - 10, 120);
-      const doorOutline = createBox(w - 8, doorH, 0.5, COLORS.stairEdge);
-      doorOutline.position.set(x + w / 2, columnY, stepZ + 0.3);
-      if (descending) {
-        doorOutline.position.z = stepZ + stepDepth - 0.3;
-      }
-      group.add(doorOutline);
-
-      // Door fill (slightly lighter)
-      const doorFill = createBox(w - 12, doorH - 4, 0.8, COLORS.stairCabinet);
-      doorFill.position.set(x + w / 2, columnY, stepZ + 0.5);
-      if (descending) {
-        doorFill.position.z = stepZ + stepDepth - 0.5;
-      }
-      group.add(doorFill);
-
-      // Handle (small dark dot)
-      const handle = createBox(3, 8, 1.5, COLORS.cabinetHandle);
-      handle.position.set(x + w / 2, columnY, stepZ + 1);
-      if (descending) {
-        handle.position.z = stepZ + stepDepth - 1;
-      }
-      group.add(handle);
-    }
   }
 
-  // Side panel (visible side of the staircase)
+  // === Cabinet doors on the side face (3 zones) ===
+  // Cabinet 1: under steps 3-4 (small cabinet, 1 door)
+  const cab1H = 3 * stepHeight; // height at step 3
+  const cab1Z = z + 2 * stepDepth; // starts at step 3
+  const cab1D = 2 * stepDepth; // spans steps 3-4
+  const cab1Door = createBox(w - 8, cab1H - 10, 0.8, COLORS.stairCabinet);
+  cab1Door.position.set(x + w / 2, yBottom + cab1H / 2, cab1Z + 0.5);
+  group.add(cab1Door);
+  const cab1Outline = createBox(w - 6, cab1H - 6, 0.3, COLORS.stairEdge);
+  cab1Outline.position.set(x + w / 2, yBottom + cab1H / 2, cab1Z + 0.3);
+  group.add(cab1Outline);
+  const cab1Handle = createBox(3, 8, 1.5, COLORS.cabinetHandle);
+  cab1Handle.position.set(x + w / 2, yBottom + cab1H / 2, cab1Z + 1);
+  group.add(cab1Handle);
+
+  // Cabinet 2: under steps 5-7 (left wardrobe door)
+  const cab2H = 5 * stepHeight; // height at step 5
+  const cab2Z = z + 4 * stepDepth; // starts at step 5
+  const cab2D = 3 * stepDepth; // spans steps 5-7
+  const cab2Door = createBox(w - 8, cab2H - 10, 0.8, COLORS.stairCabinet);
+  cab2Door.position.set(x + w / 2, yBottom + cab2H / 2, cab2Z + 0.5);
+  group.add(cab2Door);
+  const cab2Outline = createBox(w - 6, cab2H - 6, 0.3, COLORS.stairEdge);
+  cab2Outline.position.set(x + w / 2, yBottom + cab2H / 2, cab2Z + 0.3);
+  group.add(cab2Outline);
+  const cab2Handle = createBox(3, 8, 1.5, COLORS.cabinetHandle);
+  cab2Handle.position.set(x + w / 2, yBottom + cab2H / 2, cab2Z + 1);
+  group.add(cab2Handle);
+
+  // Cabinet 3: under steps 8-10 (right wardrobe door)
+  const cab3H = 8 * stepHeight; // height at step 8
+  const cab3Z = z + 7 * stepDepth; // starts at step 8
+  const cab3D = 3 * stepDepth; // spans steps 8-10
+  const cab3Door = createBox(w - 8, cab3H - 10, 0.8, COLORS.stairCabinet);
+  cab3Door.position.set(x + w / 2, yBottom + cab3H / 2, cab3Z + 0.5);
+  group.add(cab3Door);
+  const cab3Outline = createBox(w - 6, cab3H - 6, 0.3, COLORS.stairEdge);
+  cab3Outline.position.set(x + w / 2, yBottom + cab3H / 2, cab3Z + 0.3);
+  group.add(cab3Outline);
+  const cab3Handle = createBox(3, 8, 1.5, COLORS.cabinetHandle);
+  cab3Handle.position.set(x + w / 2, yBottom + cab3H / 2, cab3Z + 1);
+  group.add(cab3Handle);
+
+  // Side panels
   const sidePanel = createBox(1.5, totalHeight, d, COLORS.stairCabinet);
   sidePanel.position.set(x, yBottom + totalHeight / 2, z + d / 2);
   group.add(sidePanel);
-
   const sidePanel2 = createBox(1.5, totalHeight, d, COLORS.stairCabinet);
   sidePanel2.position.set(x + w, yBottom + totalHeight / 2, z + d / 2);
   group.add(sidePanel2);
@@ -731,8 +721,8 @@ export function buildFloor1(scene) {
   stairOpening.position.set(345, WALL_HEIGHT_1F - 1, 230);
   group.add(stairOpening);
 
-  // 5. Back door (뒷문) - 100x6 at (280,504)
-  const backDoor = createBox(100, 210, 6, COLORS.doorMetal, 0.7);
+  // 5. Back door (뒷문/베란다문) - 100x6 at (280,504) - brown wood
+  const backDoor = createBox(100, 210, 6, COLORS.doorWood, 0.9);
   backDoor.position.set(330, 105, 507);
   backDoor.userData.isFixture = true;
   backDoor.userData.name = '뒷문';
