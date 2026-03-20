@@ -4,6 +4,9 @@ import * as THREE from 'three';
 const WALL_THICKNESS = 10;
 const WALL_HEIGHT = 250;
 
+// Side-by-side layout
+export const FLOOR2_X_OFFSET = 380 + 100; // 1F width + gap
+
 // Colors
 const COLORS = {
   fixture: 0x6B7684,
@@ -85,17 +88,25 @@ function createGridHelper(w, d, y) {
   return grid;
 }
 
-function createStairs(x, z, w, d, yBottom, yTop, color, direction = 'up-z') {
+function createStairs(x, z, w, d, yBottom, yTop, color, descending = false) {
   const group = new THREE.Group();
   const stepCount = 12;
-  const stepHeight = (yTop - yBottom) / stepCount;
+  const totalHeight = yTop - yBottom;
+  const stepHeight = totalHeight / stepCount;
   const stepDepth = d / stepCount;
 
   for (let i = 0; i < stepCount; i++) {
+    const stepY = descending
+      ? yTop - stepHeight * (i + 0.5)   // descending: starts high, goes low
+      : yBottom + stepHeight * (i + 0.5); // ascending: starts low, goes high
+    const edgeY = descending
+      ? yTop - stepHeight * i
+      : yBottom + stepHeight * (i + 1);
+
     const step = createBox(w - 4, stepHeight, stepDepth - 1, color);
     step.position.set(
       x + w / 2,
-      yBottom + stepHeight * (i + 0.5),
+      stepY,
       z + stepDepth * (i + 0.5)
     );
     step.castShadow = true;
@@ -106,7 +117,7 @@ function createStairs(x, z, w, d, yBottom, yTop, color, direction = 'up-z') {
     const edge = createBox(w - 4, 1, stepDepth - 1, COLORS.stairStep);
     edge.position.set(
       x + w / 2,
-      yBottom + stepHeight * (i + 1),
+      edgeY,
       z + stepDepth * (i + 0.5)
     );
     group.add(edge);
@@ -241,7 +252,7 @@ export function buildFloor2(scene) {
   group.name = 'floor2';
 
   const W = 380, D = 480;
-  const Y_BASE = WALL_HEIGHT; // 250
+  const Y_BASE = 0; // same level as 1F (side-by-side layout)
 
   // Floor
   const floor = createFloor(W, D, Y_BASE);
@@ -297,8 +308,9 @@ export function buildFloor2(scene) {
   group.add(createFixtureLabel('칸막이', 297, Y_BASE + 30, 85));
 
   // 3. Stairs 2F (계단) - 70x140 at (310, 480-140-85=255)
+  // Descending: shows stairs coming up from 1F (high at entrance, low at far end)
   const stairsZ = D - 140 - 85; // 255
-  const stairs2 = createStairs(310, stairsZ, 70, 140, Y_BASE, Y_BASE + WALL_HEIGHT, COLORS.fixture);
+  const stairs2 = createStairs(310, stairsZ, 70, 140, Y_BASE, Y_BASE + WALL_HEIGHT, COLORS.fixture, true);
   stairs2.userData.name = '2층 계단';
   group.add(stairs2);
   group.add(createFixtureLabel('계단', 345, Y_BASE + WALL_HEIGHT / 2, stairsZ + 70));
