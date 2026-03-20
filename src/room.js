@@ -7,18 +7,25 @@ const WALL_HEIGHT = 250;
 // Side-by-side layout
 export const FLOOR2_X_OFFSET = 380 + 100; // 1F width + gap
 
-// Colors
+// Colors - matched to real apartment photos
 const COLORS = {
-  fixture: 0x6B7684,
+  floor: 0xC4A87A,         // warm oak laminate
+  wall: 0xF5F2EE,          // white/ivory walls
+  wallEdge: 0xC9BDA8,      // wall edge trim (beige molding)
+  ceiling: 0xFAFAFA,       // white ceiling
+  stairWood: 0xDDD0BE,     // light ash wood (stair steps)
+  stairEdge: 0x8B7D6B,     // darker wood edge on steps
+  stairCabinet: 0xE5DACE,  // cabinet front color
+  cabinetHandle: 0x6B5E50, // bronze handles
+  doorMetal: 0x9EA0A3,     // gray metal front door
+  doorWood: 0xDDD0BE,      // light wood interior door
+  kitchenWhite: 0xF0F0F0,  // white kitchen cabinets
+  tileGray: 0xB0B0B0,      // gray tile (entrance, backsplash)
+  washer: 0xE8E8E8,        // washing machine white
+  sinkTop: 0xD0D0D0,       // countertop
+  bathroomInner: 0xE0E0E0, // bathroom interior
   blockedArea: 0x4E5968,
   bookshelf: 0xA89F91,
-  floor: 0xF7F3E9,
-  wall: 0xE8E0D0,
-  wallEdge: 0x333333,
-  ceiling: 0xFFFFFF,
-  door: 0x8B6914,
-  stairStep: 0x5A6472,
-  stairRail: 0x4A5462,
   partition: 0xCCC5B9,
 };
 
@@ -81,59 +88,296 @@ function createCeiling(w, d, y) {
 
 function createGridHelper(w, d, y) {
   const size = Math.max(w, d);
-  const divisions = size / 10; // 10cm grid
-  const grid = new THREE.GridHelper(size, divisions, 0xCCCCCC, 0xEEEEEE);
+  const divisions = size / 10;
+  const grid = new THREE.GridHelper(size, divisions, 0xDDDDDD, 0xEEEEEE);
   grid.position.set(w / 2, y + 0.1, d / 2);
   grid.userData.isGrid = true;
   return grid;
 }
 
-function createStairs(x, z, w, d, yBottom, yTop, color, descending = false) {
+/**
+ * Storage staircase - stepped profile with cabinet doors underneath
+ * Matches the real apartment's ash wood storage stairs
+ */
+function createStorageStairs(x, z, w, d, yBottom, yTop, descending = false) {
   const group = new THREE.Group();
-  const stepCount = 12;
+  const stepCount = 8; // ~8 steps visible in photos
   const totalHeight = yTop - yBottom;
   const stepHeight = totalHeight / stepCount;
   const stepDepth = d / stepCount;
 
   for (let i = 0; i < stepCount; i++) {
+    // Step tread (the flat part you walk on)
     const stepY = descending
-      ? yTop - stepHeight * (i + 0.5)   // descending: starts high, goes low
-      : yBottom + stepHeight * (i + 0.5); // ascending: starts low, goes high
-    const edgeY = descending
-      ? yTop - stepHeight * i
-      : yBottom + stepHeight * (i + 1);
+      ? yTop - stepHeight * (i + 1)
+      : yBottom + stepHeight * i;
+    const stepZ = z + stepDepth * i;
 
-    const step = createBox(w - 4, stepHeight, stepDepth - 1, color);
-    step.position.set(
+    // Full height column for this step (the storage part below)
+    const columnH = descending
+      ? totalHeight - stepHeight * i
+      : stepHeight * (i + 1);
+    const columnY = descending
+      ? yTop - columnH / 2
+      : yBottom + columnH / 2;
+
+    // Storage body (cabinet behind steps)
+    const cabinet = createBox(w, columnH, stepDepth - 1, COLORS.stairCabinet);
+    cabinet.position.set(x + w / 2, columnY, stepZ + stepDepth / 2);
+    cabinet.castShadow = true;
+    cabinet.receiveShadow = true;
+    group.add(cabinet);
+
+    // Step tread (top surface - slightly wider)
+    const tread = createBox(w + 2, 3, stepDepth, COLORS.stairWood);
+    tread.position.set(
       x + w / 2,
-      stepY,
-      z + stepDepth * (i + 0.5)
+      stepY + columnH + 1.5,
+      stepZ + stepDepth / 2
     );
-    step.castShadow = true;
-    step.receiveShadow = true;
-    group.add(step);
+    if (descending) {
+      tread.position.y = yTop - stepHeight * i - 1.5;
+    }
+    tread.castShadow = true;
+    group.add(tread);
 
-    // Step edge highlight
-    const edge = createBox(w - 4, 1, stepDepth - 1, COLORS.stairStep);
+    // Step edge (darker line on front of each step)
+    const edge = createBox(w, 2, 1, COLORS.stairEdge);
     edge.position.set(
       x + w / 2,
-      edgeY,
-      z + stepDepth * (i + 0.5)
+      stepY + columnH,
+      stepZ + 0.5
     );
+    if (descending) {
+      edge.position.y = yTop - stepHeight * i;
+      edge.position.z = stepZ + stepDepth - 0.5;
+    }
     group.add(edge);
+
+    // Cabinet door lines (decorative) - only on the front face for taller sections
+    if (columnH > 40) {
+      // Door outline
+      const doorH = Math.min(columnH - 10, 120);
+      const doorOutline = createBox(w - 8, doorH, 0.5, COLORS.stairEdge);
+      doorOutline.position.set(x + w / 2, columnY, stepZ + 0.3);
+      if (descending) {
+        doorOutline.position.z = stepZ + stepDepth - 0.3;
+      }
+      group.add(doorOutline);
+
+      // Door fill (slightly lighter)
+      const doorFill = createBox(w - 12, doorH - 4, 0.8, COLORS.stairCabinet);
+      doorFill.position.set(x + w / 2, columnY, stepZ + 0.5);
+      if (descending) {
+        doorFill.position.z = stepZ + stepDepth - 0.5;
+      }
+      group.add(doorFill);
+
+      // Handle (small dark dot)
+      const handle = createBox(3, 8, 1.5, COLORS.cabinetHandle);
+      handle.position.set(x + w / 2, columnY, stepZ + 1);
+      if (descending) {
+        handle.position.z = stepZ + stepDepth - 1;
+      }
+      group.add(handle);
+    }
   }
 
-  // Side rails
-  const railHeight = yTop - yBottom + 40;
-  const rail1 = createBox(2, railHeight, d, COLORS.stairRail, 0.3);
-  rail1.position.set(x + 1, yBottom + railHeight / 2, z + d / 2);
-  group.add(rail1);
+  // Side panel (visible side of the staircase)
+  const sidePanel = createBox(1.5, totalHeight, d, COLORS.stairCabinet);
+  sidePanel.position.set(x, yBottom + totalHeight / 2, z + d / 2);
+  group.add(sidePanel);
 
-  const rail2 = createBox(2, railHeight, d, COLORS.stairRail, 0.3);
-  rail2.position.set(x + w - 1, yBottom + railHeight / 2, z + d / 2);
-  group.add(rail2);
+  const sidePanel2 = createBox(1.5, totalHeight, d, COLORS.stairCabinet);
+  sidePanel2.position.set(x + w, yBottom + totalHeight / 2, z + d / 2);
+  group.add(sidePanel2);
 
   group.userData.isFixture = true;
+  return group;
+}
+
+/**
+ * Kitchen/sink unit: lower cabinet + washing machine + countertop + upper cabinets + backsplash
+ */
+function createKitchenUnit(x, z, w, d, yBase) {
+  const group = new THREE.Group();
+
+  // Lower cabinet (left half)
+  const cabinetW = w * 0.5;
+  const cabinetH = 85;
+  const cabinet = createBox(cabinetW, cabinetH, d, COLORS.kitchenWhite);
+  cabinet.position.set(x + cabinetW / 2, yBase + cabinetH / 2, z + d / 2);
+  cabinet.castShadow = true;
+  group.add(cabinet);
+
+  // Cabinet door detail
+  const cabinetDoor = createBox(cabinetW - 4, cabinetH - 6, 1, COLORS.kitchenWhite);
+  cabinetDoor.position.set(x + cabinetW / 2, yBase + cabinetH / 2, z + d + 0.5);
+  group.add(cabinetDoor);
+
+  // Washing machine (right half of lower section)
+  const washerW = w * 0.45;
+  const washerH = 82;
+  const washer = createBox(washerW, washerH, d - 4, COLORS.washer);
+  washer.position.set(x + cabinetW + washerW / 2, yBase + washerH / 2, z + d / 2);
+  washer.castShadow = true;
+  group.add(washer);
+
+  // Washer door (circle approximation - dark ring)
+  const washerDoor = createBox(washerW * 0.6, washerW * 0.6, 1, 0xCCCCCC);
+  washerDoor.position.set(x + cabinetW + washerW / 2, yBase + washerH / 2, z + d + 0.5);
+  group.add(washerDoor);
+
+  // Countertop (full width)
+  const counterTop = createBox(w, 4, d + 2, COLORS.sinkTop);
+  counterTop.position.set(x + w / 2, yBase + cabinetH + 2, z + d / 2);
+  counterTop.castShadow = true;
+  group.add(counterTop);
+
+  // Sink basin (depression on counter)
+  const sinkBasin = createBox(30, 3, 20, 0xA0A0A0);
+  sinkBasin.position.set(x + cabinetW / 2, yBase + cabinetH + 0.5, z + d / 2);
+  group.add(sinkBasin);
+
+  // Faucet
+  const faucetPole = createBox(2, 25, 2, 0x888888);
+  faucetPole.position.set(x + cabinetW / 2, yBase + cabinetH + 16, z + d * 0.25);
+  group.add(faucetPole);
+  const faucetArm = createBox(2, 2, 12, 0x888888);
+  faucetArm.position.set(x + cabinetW / 2, yBase + cabinetH + 28, z + d * 0.35);
+  group.add(faucetArm);
+
+  // Backsplash tiles (gray)
+  const splashH = 60;
+  const splash = createBox(w, splashH, 2, COLORS.tileGray);
+  splash.position.set(x + w / 2, yBase + cabinetH + 4 + splashH / 2, z - 1);
+  group.add(splash);
+
+  // Tile lines on backsplash
+  for (let i = 1; i < 4; i++) {
+    const tileLine = createBox(w, 0.5, 2.5, 0xA8A8A8);
+    tileLine.position.set(x + w / 2, yBase + cabinetH + 4 + splashH * i / 4, z - 1.2);
+    group.add(tileLine);
+  }
+
+  // Upper cabinets
+  const upperH = 60;
+  const upperY = yBase + cabinetH + 4 + splashH + 10;
+  const upperCab = createBox(w, upperH, d * 0.7, COLORS.kitchenWhite);
+  upperCab.position.set(x + w / 2, upperY + upperH / 2, z + d * 0.35 / 2);
+  upperCab.castShadow = true;
+  group.add(upperCab);
+
+  // Upper cabinet door lines
+  const doorLine = createBox(0.5, upperH - 4, d * 0.7 + 0.5, 0xDDDDDD);
+  doorLine.position.set(x + w / 2, upperY + upperH / 2, z + d * 0.35 / 2 + 0.3);
+  group.add(doorLine);
+
+  // Range hood (below upper cabinets)
+  const hood = createBox(w * 0.6, 15, d * 0.5, 0xCCCCCC);
+  hood.position.set(x + w / 2, upperY - 7.5, z + d * 0.25);
+  group.add(hood);
+
+  group.userData.isFixture = true;
+  group.userData.name = '주방';
+  return group;
+}
+
+/**
+ * Entrance area with tile floor and metal door
+ */
+function createEntrance(x, z, doorW, doorH, tileW, tileD, yBase) {
+  const group = new THREE.Group();
+
+  // Tile floor area (slightly recessed - gray)
+  const tile = createBox(tileW, 1, tileD, COLORS.tileGray);
+  tile.position.set(x + tileW / 2, yBase - 0.5, z + tileD / 2);
+  tile.receiveShadow = true;
+  group.add(tile);
+
+  // Step edge between tile and wood floor
+  const stepEdge = createBox(tileW + 4, 2, 2, COLORS.wallEdge);
+  stepEdge.position.set(x + tileW / 2, yBase + 1, z + tileD);
+  group.add(stepEdge);
+
+  // Metal front door
+  const door = createBox(doorW, doorH, 6, COLORS.doorMetal, 0.9);
+  door.position.set(x + tileW / 2, yBase + doorH / 2, z);
+  door.userData.isFixture = true;
+  door.userData.name = '현관문';
+  group.add(door);
+
+  // Door handle
+  const handle = createBox(2, 8, 3, 0x666666);
+  handle.position.set(x + tileW / 2 + doorW * 0.3, yBase + doorH * 0.45, z + 4);
+  group.add(handle);
+
+  // Door closer (top)
+  const closer = createBox(20, 4, 6, 0x888888);
+  closer.position.set(x + tileW / 2, yBase + doorH - 10, z + 4);
+  group.add(closer);
+
+  group.userData.isFixture = true;
+  return group;
+}
+
+/**
+ * Bathroom room with door
+ */
+function createBathroomRoom(x, z, w, d, height, yBase) {
+  const group = new THREE.Group();
+
+  // Bathroom floor (tile - slightly different color)
+  const bathFloor = createBox(w, 1, d, 0xD5D5D5);
+  bathFloor.position.set(x + w / 2, yBase + 0.5, z + d / 2);
+  group.add(bathFloor);
+
+  // Bathroom interior fill (semi-transparent to show it's a room)
+  const interior = createBox(w - WALL_THICKNESS, height * 0.3, d - WALL_THICKNESS, COLORS.bathroomInner, 0.3);
+  interior.position.set(x + w / 2, yBase + height * 0.15, z + d / 2);
+  group.add(interior);
+
+  // Inner walls
+  group.add(createWall(x + w, z, x + w, z + d, height, yBase, COLORS.wall));
+  group.add(createWall(x, z + d, x + w, z + d, height, yBase, COLORS.wall));
+
+  // Door opening in south wall (leave a gap)
+  // Door (light wood color)
+  const doorW = 70;
+  const doorH = 200;
+  const doorX = x + w - doorW - 10;
+  const door = createBox(doorW, doorH, 4, COLORS.doorWood, 0.85);
+  door.position.set(doorX + doorW / 2, yBase + doorH / 2, z + d + 2);
+  group.add(door);
+
+  // Door handle
+  const handle = createBox(2, 6, 2.5, 0x888888);
+  handle.position.set(doorX + doorW * 0.85, yBase + doorH * 0.45, z + d + 4.5);
+  group.add(handle);
+
+  // Door frame
+  const frameL = createBox(3, doorH, 4, COLORS.wallEdge);
+  frameL.position.set(doorX, yBase + doorH / 2, z + d + 2);
+  group.add(frameL);
+  const frameR = createBox(3, doorH, 4, COLORS.wallEdge);
+  frameR.position.set(doorX + doorW, yBase + doorH / 2, z + d + 2);
+  group.add(frameR);
+  const frameT = createBox(doorW + 6, 3, 4, COLORS.wallEdge);
+  frameT.position.set(doorX + doorW / 2, yBase + doorH, z + d + 2);
+  group.add(frameT);
+
+  // Simple toilet representation
+  const toilet = createBox(35, 35, 50, 0xF0F0F0);
+  toilet.position.set(x + 40, yBase + 17.5, z + d - 35);
+  group.add(toilet);
+
+  // Simple sink/basin
+  const basin = createBox(40, 15, 30, 0xF0F0F0);
+  basin.position.set(x + w - 35, yBase + 80, z + 30);
+  group.add(basin);
+
+  group.userData.isFixture = true;
+  group.userData.name = '화장실';
   return group;
 }
 
@@ -142,10 +386,11 @@ function createFixtureLabel(text, x, y, z) {
   canvas.width = 256;
   canvas.height = 64;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(0, 0, 256, 64);
+  ctx.fillStyle = 'rgba(50,50,50,0.6)';
+  ctx.roundRect(0, 0, 256, 64, 8);
+  ctx.fill();
   ctx.fillStyle = 'white';
-  ctx.font = 'bold 24px sans-serif';
+  ctx.font = 'bold 22px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, 128, 32);
@@ -154,7 +399,7 @@ function createFixtureLabel(text, x, y, z) {
   const mat = new THREE.SpriteMaterial({ map: texture });
   const sprite = new THREE.Sprite(mat);
   sprite.position.set(x, y, z);
-  sprite.scale.set(60, 15, 1);
+  sprite.scale.set(55, 14, 1);
   return sprite;
 }
 
@@ -164,7 +409,7 @@ export function buildFloor1(scene) {
 
   const W = 380, D = 510;
 
-  // Floor
+  // Floor (warm oak laminate)
   const floor = createFloor(W, D, 0);
   floor.name = 'floor1-surface';
   group.add(floor);
@@ -174,64 +419,63 @@ export function buildFloor1(scene) {
   grid.name = 'floor1-grid';
   group.add(grid);
 
-  // Ceiling (semi-transparent)
+  // Ceiling
   const ceiling = createCeiling(W, D, WALL_HEIGHT);
   ceiling.name = 'floor1-ceiling';
   group.add(ceiling);
 
-  // Outer walls
-  // North wall (top, z=0)
+  // Outer walls (white)
   group.add(createWall(0, 0, W, 0, WALL_HEIGHT, 0));
-  // East wall (right, x=380)
   group.add(createWall(W, 0, W, D, WALL_HEIGHT, 0));
-  // South wall (bottom, z=510)
   group.add(createWall(W, D, 0, D, WALL_HEIGHT, 0));
-  // West wall (left, x=0)
   group.add(createWall(0, D, 0, 0, WALL_HEIGHT, 0));
+
+  // Wall edge molding (beige trim at top of walls)
+  const moldingH = 3;
+  const molding1 = createBox(W, moldingH, 1, COLORS.wallEdge);
+  molding1.position.set(W / 2, WALL_HEIGHT - moldingH / 2, WALL_THICKNESS / 2);
+  group.add(molding1);
+  const molding2 = createBox(1, moldingH, D, COLORS.wallEdge);
+  molding2.position.set(WALL_THICKNESS / 2, WALL_HEIGHT - moldingH / 2, D / 2);
+  group.add(molding2);
 
   // === Fixed Structures ===
 
-  // 1. Bathroom (화장실) - 200x170 at (0,0), height 250
-  const bathroom = createBox(200, WALL_HEIGHT, 170, COLORS.fixture, 0.7);
-  bathroom.position.set(100, WALL_HEIGHT / 2, 85);
-  bathroom.userData.isFixture = true;
-  bathroom.userData.name = '화장실';
+  // 1. Bathroom (화장실) - 200x170 at (0,0)
+  const bathroom = createBathroomRoom(0, 0, 200, 170, WALL_HEIGHT, 0);
   group.add(bathroom);
-  group.add(createFixtureLabel('화장실', 100, WALL_HEIGHT / 2 + 20, 85));
+  group.add(createFixtureLabel('화장실', 100, 140, 85));
 
-  // Bathroom inner walls (visible lines)
-  group.add(createWall(200, 0, 200, 170, WALL_HEIGHT, 0, COLORS.wallEdge)); // east wall
-  group.add(createWall(0, 170, 200, 170, WALL_HEIGHT, 0, COLORS.wallEdge)); // south wall
+  // 2. Kitchen/Sink unit (주방) - along the left wall, below bathroom
+  // 150x60 at (0,170)
+  const kitchen = createKitchenUnit(0, 175, 150, 55, 0);
+  group.add(kitchen);
+  group.add(createFixtureLabel('주방', 75, 160, 200));
 
-  // 2. Sink (싱크대) - 150x60 at (0,170), height 90
-  const sink = createBox(150, 90, 60, COLORS.fixture, 0.8);
-  sink.position.set(75, 45, 200);
-  sink.userData.isFixture = true;
-  sink.userData.name = '싱크대';
-  group.add(sink);
-  group.add(createFixtureLabel('싱크대', 75, 100, 200));
+  // 3. Entrance area (현관) - with front door at the top-right area
+  // Shoe area at (280,0), front door faces z=0 (north wall)
+  const entrance = createEntrance(270, -3, 80, 210, 100, 70, 0);
+  group.add(entrance);
+  group.add(createFixtureLabel('현관', 320, 100, 35));
 
-  // 3. Shoe rack (신발장) - 100x70 at (280,0), height 120
-  const shoeRack = createBox(100, 120, 70, COLORS.fixture, 0.8);
-  shoeRack.position.set(330, 60, 35);
-  shoeRack.userData.isFixture = true;
-  shoeRack.userData.name = '신발장';
-  group.add(shoeRack);
-  group.add(createFixtureLabel('신발장', 330, 130, 35));
-
-  // 4. Stairs (계단) - 70x210 at (310,225), height 250
-  const stairs = createStairs(310, 225, 70, 210, 0, WALL_HEIGHT, COLORS.fixture);
+  // 4. Storage Stairs (수납 계단) - 70x210 at (310,225)
+  const stairs = createStorageStairs(310, 225, 70, 210, 0, WALL_HEIGHT);
   stairs.userData.name = '계단';
   group.add(stairs);
-  group.add(createFixtureLabel('계단', 345, WALL_HEIGHT / 2, 330));
+  group.add(createFixtureLabel('계단', 345, WALL_HEIGHT / 2 + 30, 330));
+
+  // Ceiling opening above stairs (darker area showing 2F access)
+  const stairOpening = createBox(72, 2, 75, 0x333344, 0.7);
+  stairOpening.position.set(345, WALL_HEIGHT - 1, 230);
+  group.add(stairOpening);
 
   // 5. Back door (뒷문) - 100x6 at (280,504)
-  const backDoor = createBox(100, 210, 6, COLORS.door, 0.6);
+  const backDoor = createBox(100, 210, 6, COLORS.doorMetal, 0.7);
   backDoor.position.set(330, 105, 507);
   backDoor.userData.isFixture = true;
   backDoor.userData.name = '뒷문';
   group.add(backDoor);
-  group.add(createFixtureLabel('뒷문', 330, 20, 507));
+  group.add(createFixtureLabel('뒷문', 330, 30, 507));
 
   // 6. Bookshelf (책장) - 30x100 at (0,410), height 180 - MOVABLE!
   const bookshelf = createBox(30, 180, 100, COLORS.bookshelf, 0.9);
@@ -252,9 +496,9 @@ export function buildFloor2(scene) {
   group.name = 'floor2';
 
   const W = 380, D = 480;
-  const Y_BASE = 0; // same level as 1F (side-by-side layout)
+  const Y_BASE = 0;
 
-  // Floor
+  // Floor (warm oak laminate)
   const floor = createFloor(W, D, Y_BASE);
   floor.name = 'floor2-surface';
   group.add(floor);
@@ -269,7 +513,7 @@ export function buildFloor2(scene) {
   ceiling.name = 'floor2-ceiling';
   group.add(ceiling);
 
-  // Outer walls
+  // Outer walls (white)
   group.add(createWall(0, 0, W, 0, WALL_HEIGHT, Y_BASE));
   group.add(createWall(W, 0, W, D, WALL_HEIGHT, Y_BASE));
   group.add(createWall(W, D, 0, D, WALL_HEIGHT, Y_BASE));
@@ -277,7 +521,7 @@ export function buildFloor2(scene) {
 
   // === Fixed Structures ===
 
-  // 1. Blocked space (막힌공간 X) - 215x170 at (0,0), height 250
+  // 1. Blocked space (막힌공간 X) - 215x170 at (0,0)
   const blocked = createBox(215, WALL_HEIGHT, 170, COLORS.blockedArea, 0.75);
   blocked.position.set(107.5, Y_BASE + WALL_HEIGHT / 2, 85);
   blocked.userData.isFixture = true;
@@ -286,11 +530,10 @@ export function buildFloor2(scene) {
   group.add(createFixtureLabel('X (막힌공간)', 107.5, Y_BASE + WALL_HEIGHT / 2 + 20, 85));
 
   // Blocked space walls
-  group.add(createWall(215, 0, 215, 170, WALL_HEIGHT, Y_BASE, COLORS.wallEdge));
-  group.add(createWall(0, 170, 215, 170, WALL_HEIGHT, Y_BASE, COLORS.wallEdge));
+  group.add(createWall(215, 0, 215, 170, WALL_HEIGHT, Y_BASE, COLORS.wall));
+  group.add(createWall(0, 170, 215, 170, WALL_HEIGHT, Y_BASE, COLORS.wall));
 
-  // 2. Partition area (칸막이) - 165x170 at (215,0) - dashed boundary
-  // Create partition boundary line (dashed)
+  // 2. Partition area (칸막이)
   const partitionGeo = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(215, Y_BASE + 0.5, 0),
     new THREE.Vector3(215, Y_BASE + 0.5, 170),
@@ -307,13 +550,17 @@ export function buildFloor2(scene) {
   group.add(partitionLine);
   group.add(createFixtureLabel('칸막이', 297, Y_BASE + 30, 85));
 
-  // 3. Stairs 2F (계단) - 70x140 at (310, 480-140-85=255)
-  // Descending: shows stairs coming up from 1F (high at entrance, low at far end)
+  // 3. Stairs 2F (descending - shows where you come up from 1F)
   const stairsZ = D - 140 - 85; // 255
-  const stairs2 = createStairs(310, stairsZ, 70, 140, Y_BASE, Y_BASE + WALL_HEIGHT, COLORS.fixture, true);
+  const stairs2 = createStorageStairs(310, stairsZ, 70, 140, Y_BASE, Y_BASE + WALL_HEIGHT, true);
   stairs2.userData.name = '2층 계단';
   group.add(stairs2);
-  group.add(createFixtureLabel('계단', 345, Y_BASE + WALL_HEIGHT / 2, stairsZ + 70));
+  group.add(createFixtureLabel('계단', 345, Y_BASE + WALL_HEIGHT / 2 + 30, stairsZ + 70));
+
+  // Floor opening where stairs come up (darker area)
+  const stairHole = createBox(72, 2, 75, 0x333344, 0.7);
+  stairHole.position.set(345, Y_BASE + 1, stairsZ + 140);
+  group.add(stairHole);
 
   return group;
 }
