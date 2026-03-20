@@ -209,7 +209,7 @@ function createStorageStairs(x, z, w, d, yBottom, yTop, descending = false) {
 function createKitchenUnit(x, z, w, d, yBase) {
   const group = new THREE.Group();
 
-  // Lower cabinet (left half)
+  // Lower cabinet (left half) - white
   const cabinetW = w * 0.5;
   const cabinetH = 85;
   const cabinet = createBox(cabinetW, cabinetH, d, COLORS.kitchenWhite);
@@ -217,12 +217,7 @@ function createKitchenUnit(x, z, w, d, yBase) {
   cabinet.castShadow = true;
   group.add(cabinet);
 
-  // Cabinet door detail
-  const cabinetDoor = createBox(cabinetW - 4, cabinetH - 6, 1, COLORS.kitchenWhite);
-  cabinetDoor.position.set(x + cabinetW / 2, yBase + cabinetH / 2, z + d + 0.5);
-  group.add(cabinetDoor);
-
-  // Washing machine (right half of lower section)
+  // Washing machine (right half) - slightly off-white
   const washerW = w * 0.45;
   const washerH = 82;
   const washer = createBox(washerW, washerH, d - 4, COLORS.washer);
@@ -230,31 +225,26 @@ function createKitchenUnit(x, z, w, d, yBase) {
   washer.castShadow = true;
   group.add(washer);
 
-  // Washer door (circle approximation - dark ring)
-  const washerDoor = createBox(washerW * 0.6, washerW * 0.6, 1, 0xCCCCCC);
-  washerDoor.position.set(x + cabinetW + washerW / 2, yBase + washerH / 2, z + d + 0.5);
-  group.add(washerDoor);
-
-  // Countertop (full width)
+  // Countertop (full width, stone gray)
   const counterTop = createBox(w, 4, d + 2, COLORS.sinkTop);
   counterTop.position.set(x + w / 2, yBase + cabinetH + 2, z + d / 2);
   counterTop.castShadow = true;
   group.add(counterTop);
 
-  // Sink basin (depression on counter)
+  // Sink basin
   const sinkBasin = createBox(30, 3, 20, 0xA0A0A0);
   sinkBasin.position.set(x + cabinetW / 2, yBase + cabinetH + 0.5, z + d / 2);
   group.add(sinkBasin);
 
-  // Faucet
-  const faucetPole = createBox(2, 25, 2, 0x888888);
-  faucetPole.position.set(x + cabinetW / 2, yBase + cabinetH + 16, z + d * 0.25);
+  // Faucet (simple L-shape)
+  const faucetPole = createBox(2, 20, 2, 0x888888);
+  faucetPole.position.set(x + cabinetW / 2, yBase + cabinetH + 14, z + d * 0.25);
   group.add(faucetPole);
-  const faucetArm = createBox(2, 2, 12, 0x888888);
-  faucetArm.position.set(x + cabinetW / 2, yBase + cabinetH + 28, z + d * 0.35);
+  const faucetArm = createBox(2, 2, 10, 0x888888);
+  faucetArm.position.set(x + cabinetW / 2, yBase + cabinetH + 24, z + d * 0.35);
   group.add(faucetArm);
 
-  // Backsplash tiles (gray)
+  // Backsplash (gray tile)
   const splashH = 60;
   const splash = createBox(w, splashH, 2, COLORS.tileGray);
   splash.position.set(x + w / 2, yBase + cabinetH + 4 + splashH / 2, z - 1);
@@ -267,22 +257,21 @@ function createKitchenUnit(x, z, w, d, yBase) {
     group.add(tileLine);
   }
 
-  // Upper cabinets
+  // Upper cabinets (white, two sections)
   const upperH = 60;
   const upperY = yBase + cabinetH + 4 + splashH + 10;
-  const upperCab = createBox(w, upperH, d * 0.7, COLORS.kitchenWhite);
-  upperCab.position.set(x + w / 2, upperY + upperH / 2, z + d * 0.35 / 2);
-  upperCab.castShadow = true;
-  group.add(upperCab);
+  const upperCabL = createBox(w * 0.42, upperH, d * 0.7, COLORS.kitchenWhite);
+  upperCabL.position.set(x + w * 0.21, upperY + upperH / 2, z + d * 0.35 / 2);
+  upperCabL.castShadow = true;
+  group.add(upperCabL);
+  const upperCabR = createBox(w * 0.42, upperH, d * 0.7, COLORS.kitchenWhite);
+  upperCabR.position.set(x + w * 0.79, upperY + upperH / 2, z + d * 0.35 / 2);
+  upperCabR.castShadow = true;
+  group.add(upperCabR);
 
-  // Upper cabinet door lines
-  const doorLine = createBox(0.5, upperH - 4, d * 0.7 + 0.5, 0xDDDDDD);
-  doorLine.position.set(x + w / 2, upperY + upperH / 2, z + d * 0.35 / 2 + 0.3);
-  group.add(doorLine);
-
-  // Range hood (below upper cabinets)
-  const hood = createBox(w * 0.6, 15, d * 0.5, 0xCCCCCC);
-  hood.position.set(x + w / 2, upperY - 7.5, z + d * 0.25);
+  // Range hood (between upper cabinets)
+  const hood = createBox(w * 0.3, 12, d * 0.5, 0xCCCCCC);
+  hood.position.set(x + w / 2, upperY - 6, z + d * 0.25);
   group.add(hood);
 
   group.userData.isFixture = true;
@@ -480,7 +469,7 @@ function createBathroomRoom(x, z, w, d, height, yBase) {
 function createOpenBookshelf(x, z, w, d, h, yBase) {
   const group = new THREE.Group();
   const cols = 2;
-  const rows = 4;
+  const rows = 5;
   const shelfThick = 2;
   const sideThick = 2;
   const cellW = (w - sideThick * (cols + 1)) / cols;
