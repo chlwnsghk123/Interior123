@@ -1,1 +1,26 @@
-
+{
+  "name": "3D 인테리어 - 복층 가구 배치",
+  "short_name": "3D 인테리어",
+  "description": "Three.js 기반 복층 인테리어 가구 배치 시뮬레이터",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#0f3460",
+  "icons": [
+    {
+      "src": "/favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
